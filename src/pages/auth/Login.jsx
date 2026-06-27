@@ -1,34 +1,69 @@
-import React, { useState } from "react";
+import { useState } from "react";
 import Button from "../../component/common/Button";
-import { Link, useNavigate } from "react-router";
-import app from "../../firebase/firebase.confg";
-import { getAuth, signInWithEmailAndPassword } from "firebase/auth";
+import { Link, useNavigate} from "react-router";
+
+
+import { Lock, Mail } from "lucide-react";
+import { signInWithEmailAndPassword } from "firebase/auth";
+import { auth, db } from "../../firebase/firebase.confg";
+import { doc, getDoc } from "firebase/firestore";
+
 
 function Login() {
-  const [email, setemail] = useState("");
-  const [password, setpassword] = useState("");
-  const [error, seterror] = useState("");
-  const auth = getAuth(app);
-  const navigate = useNavigate()
+  const [from, setFrom] = useState({
+    email:"",
+    password:""});
 
-  const handaleLogin = (e) => {
-    e.preventDefault();
+    const navigate = useNavigate()
+  
+ 
+  const handleLogin = async (e)=>{
+   e.preventDefault();
+   try {
+   const userCredential = await signInWithEmailAndPassword(auth,from.email,from.password)
+   const user = userCredential.user
+    // navigate("/Dashbord")
+   
+     
+     
+    const docRef = doc(db,"users",user.uid)
+    const docSnap = await getDoc(docRef)
 
-    signInWithEmailAndPassword(auth, email, password)
-      .then((userCredential) => {
-        // Signed in
-        const user = userCredential.user;
-        alert("Login succesfull")
-         navigate("/Dashbord")
+    if (docSnap.exists()) {
+      const dataBaseRole = docSnap.data().role
+      if (dataBaseRole ==="admin") {
+        alert("admin Login succesfully")
+         navigate("/AdminDashbord")
         
-        // ...
-      })
-      .catch((error) => {
-        const errorCode = error.code;
-        const errorMessage = error.message;
-        seterror(errorMessage);
-      });
-  };
+      }else if (dataBaseRole ==="employee"){
+        
+
+        alert("empollye Login succesfully")
+         navigate("/empollyeDashbord")
+
+      }else{
+        alert("invalid email")
+      }
+      
+      
+    }
+    
+   } catch (error) {
+    console.log(error);
+    
+   }
+    
+  }
+const handlechange= (e)=>{
+  const {name,value} = e.target
+
+  
+  setFrom({
+    ...from,
+    [name]:value,
+  } )
+}
+
 
   return (
     <>
@@ -44,16 +79,18 @@ function Login() {
             <p>Login to your account</p>
           </div>
 
-          <form onSubmit={handaleLogin} className=" space-y-6">
+          <form onSubmit={handleLogin} className=" space-y-6">
             <div>
               <label className="text-sm text-gray-800 font-bold block mb-2">
                 Email
               </label>
-              <div>
+              <div className=" relative">
+                 <Mail className=" absolute top-3 left-3 size-5 text-gray-400" />
                 <input
-                  value={email}
-                  onChange={(e) => setemail(e.target.value)}
+                  value={from.email}
+                  onChange={handlechange}
                   type="email"
+                  name="email"
                   placeholder="email@example.com"
                   className="w-full rounded-full border border-gray-200 focus:ring-2 focus:ring-[#1B4332] outline-none focus:border-transparent transition pl-10 pr-4 py-2 "
                 />
@@ -64,29 +101,32 @@ function Login() {
               <label className="text-sm text-gray-800 font-bold block mb-2">
                 Password
               </label>
-              <div>
+              <div className=" relative">
+                 <Lock className=" absolute top-3 left-3 size-5 text-gray-400" />
                 <input
-                  value={password}
-                  onChange = {(e) => setpassword(e.target.value)}
-                  type="Password"
+                  value={from.password}
+                  onChange = {handlechange}
+                  type="password"
+                  name="password"
                   placeholder="********"
                   className="w-full rounded-full border border-gray-200 focus:ring-2 focus:ring-[#1B4332] outline-none focus:border-transparent transition pl-10 pr-4 py-2 "
                 />
 
               </div>
             </div>
-             {error && (
+             {/* {error && (
             <p className=" text-sm text-red-500 italic">
              invalid email or password
             </p>
-          )}
+          )} */}
 
-            <button
+            <Button
+            
               type="submit"
               className=" flex w-full font-semibold text-xl text-white rounded-full  justify-center items-center px-4 py-2 bg-[#1B4332]"
             >
               Login
-            </button>
+            </Button>
           </form>
          
           <div className=" text-center mt-4 ">
